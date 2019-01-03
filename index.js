@@ -4,7 +4,7 @@
 
 console.log("hello");
 
-//Stack[0] is the stack for pos0, stack[1] is the stack for pos1
+//stack[0] is the stack for pos0, stack[1] is the stack for pos1
 let stack = [[], []];
 class Layer {
   constructor(pos, init) {
@@ -17,18 +17,20 @@ class Layer {
 
     init(this.elem);
 
-    this.stackIndex = null;
-    this.shown = false;
     this.pos = pos;
+    this.stackIndex =  stack[pos].push(this) - 1;
+    this.active = false;
   }
   show() {
     this.elem.style.display = "block";
-    //this.stackIndex = stack[this.pos].push(this) - 1;
-    this.shown = true;
+    this.active = true;
   }
   hide() {
     this.elem.style.display = "none";
-    stack[this.pos].splice(stack[this.pos].indexOf(this), 1);
+    this.active = false;
+  }
+  edit(editfn) {
+    editfn(this.elem);
   }
 }
 
