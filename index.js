@@ -70,7 +70,7 @@ const pos0base = new Layer(0, (elem) => {
   ctx.fillRect(20, 20, 150, 100);
 });
 
-pos0base.addHitArea([20, 20], [150, 100], () => {
+pos0base.addHitArea([20, 20], [170, 120], () => {
   pos0base.edit((elem) => {
     let ctx = elem.getContext('2d');
     ctx.fillStyle = '#FF0000';
@@ -87,7 +87,7 @@ const pos0above = new Layer(0, (elem) => {
   ctx.fillRect(50, 50, 150, 100);
 });
 
-pos0above.addHitArea([20, 20], [150, 100], () => {
+pos0above.addHitArea([50, 50], [200, 150], () => {
   pos0above.edit((elem) => {
     let ctx = elem.getContext('2d');
     ctx.fillStyle = '#FF0000';
@@ -99,7 +99,11 @@ pos0above.addHitArea([20, 20], [150, 100], () => {
 pos0above.show();
 
 document.getElementById('d0').addEventListener('click', (event) => {
-  console.log(`div clicked at x:${event.offsetX}, y: ${event.offsetY}.`);
+  for (let i = stack[0].length - 1; i >= 0; i--) {
+    if(stack[0][i].checkHit(event.offsetX, event.offsetY)) {
+      break;
+    }
+  }
 });
 /*const pos0base = new Layer(0, (elem) => {
   let ctx = elem.getContext('2d');
