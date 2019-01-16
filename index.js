@@ -1,5 +1,4 @@
 //TODO:
-//Have a way to model layers to make sure that user input is handled properly.
 //Actually design the game.
 
 console.log('hello');
@@ -7,7 +6,17 @@ console.log('hello');
 //stack[0] is the stack for pos0, stack[1] is the stack for pos1
 let stack = [[], []];
 class Layer {
+  //Current fields:
+  // elem: the canvas element associated with this layer
+  //  pos: 0 or 1, where the canvas is located
+  //  shown: boolean
+  //  stackIndex: where on the stack this Layer is, -1 if not on the stack.
+  //  hitAreas: the set of regions listening for mouse clicks. It is structured
+  //    as an array of arrays, with the top level being all hit areas, the next
+  //    level being each rectangle and a handler, and the next level being each
+  //    (x,y) corner of the rectangle. In other words [[x,y], [x,y], fn]
   constructor(pos, init) {
+    //Sets up the canvas element.
     this.elem = document.createElement('CANVAS');
     this.elem.style.display = 'none';
     document.body.appendChild(this.elem);
@@ -15,30 +24,52 @@ class Layer {
     this.elem.setAttribute('height', pos == 0 ? 768 : 480);
     this.elem.setAttribute('class', 'pos' + pos);
 
-    init(this.elem);
-
+    //Sets fields to initial values.
     this.pos = pos;
-    this.stackIndex =  stack[pos].push(this) - 1;
-    this.active = false;
-
-    //this.hitAreas is the set of regions listening for mouse clicks.
-    //It is structured as an array of arrays, with the top level being all
-    //hit areas, the next level being each rectangle and a handler, and the next
-    //level being each (x,y) corner of the rectangle.
-    //In other words [[x,y],[x,y],fn]
+    this.shown = false;
+    this.stackIndex = -1;
     this.hitAreas = [];
+
+    //Does whatever is specified in init().
+    init(this.elem, this);
   }
-  show() {
+
+  static copy(toCopy) {
+    return new Layer(toCopy.pos, (newElem, newLayer) => {
+      let ctx = newElem.getContext('2d');
+      ctx.drawImage(toCopy.elem, 0, 0);
+      newLayer.hitAreas = toCopy.hitAreas;
+    });
+  }
+
+  addToStack(optionalPosition) {
+    if (typeof optionalPosition !== 'undefined') {
+      stack[this.pos].splice(optionalPosition, 0, this);
+      this.stackIndex = optionalPosition
+    } else {
+      //Array push() returns the new array length, so the index of the element
+      //added is at that new length - 1.
+      this.stackIndex = stack[this.pos].push(this) - 1;
+    }
     this.elem.style.display = 'block';
-    this.active = true;
+    this.shown = true;
+    this.elem.style.zIndex = this.stackIndex;
   }
-  hide() {
+
+  removeFromStack() {
+    if (this.stackIndex == -1) {
+      return;
+    }
+    stack[this.pos].splice(this.stackIndex, 1);
     this.elem.style.display = 'none';
-    this.active = false;
+    this.shown = false;
+    this.elem.style.zIndex = this.stackIndex;
   }
+
   edit(editfn) {
     editfn(this.elem);
   }
+
   //corner1 and corner2 should be in the form [x, y] relative to the canvas. The
   //last argument should be a callback, executed when somewhere inside the
   //rectangle is clicked. corner1 should always be the top left, corner2 should
@@ -46,22 +77,21 @@ class Layer {
   addHitArea(corner1, corner2, fn) {
     this.hitAreas.push([corner1, corner2, fn]);
   }
+  
   checkHit(x, y) {
-    if (!this.active) {
+    if (!this.shown) {
       return false;
     }
-    let hit = false;
     for (let i = 0; i < this.hitAreas.length; i++) {
       let currentCheck = this.hitAreas[i];
       if (x >= currentCheck[0][0] && x <= currentCheck[1][0]) {
         if (y >= currentCheck[0][1] && y <= currentCheck[1][1]) {
           currentCheck[2]();
-          hit = true;
-          break;
+          return true;
         }
       }
     }
-    return hit;
+    return false;
   }
 }
 
@@ -79,7 +109,7 @@ pos0base.addHitArea([20, 20], [170, 120], () => {
   console.log('bottom hit');
 });
 
-pos0base.show();
+pos0base.addToStack();
 
 const pos0above = new Layer(0, (elem) => {
   let ctx = elem.getContext('2d');
@@ -96,7 +126,7 @@ pos0above.addHitArea([50, 50], [200, 150], () => {
   console.log('top hit');
 });
 
-pos0above.show();
+pos0above.addToStack();
 
 document.getElementById('d0').addEventListener('click', (event) => {
   for (let i = stack[0].length - 1; i >= 0; i--) {
