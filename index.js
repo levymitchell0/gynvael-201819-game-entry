@@ -54,7 +54,7 @@ class Layer {
 
   addToStack(optionalPosition) {
     if (this.stackIndex != -1) {
-      throw `Tried to add a Layer onto the stack, but it's already there.`
+      throw `Tried to add a Layer onto the stack, but it's already there.`;
     }
     if (typeof optionalPosition !== 'undefined') {
       if (optionalPosition > stack.length) {
@@ -68,7 +68,6 @@ class Layer {
       for (let i = this.stackIndex + 1; i < stack.length; i++) {
         stack[i].updateStackPosition(true);
       }
-
     } else {
       //Array push() returns the new array length, so the index of the element
       //added is at that new length - 1.
@@ -131,6 +130,7 @@ class Layer {
   }
 }
 
+/* Just a bunch of test cases.
 const pos0base = new Layer(0, (elem) => {
   let ctx = elem.getContext('2d');
   ctx.fillRect(20, 20, 150, 100);
@@ -171,7 +171,7 @@ document.getElementById('d0').addEventListener('click', (event) => {
     }
   }
 });
-/*const pos0base = new Layer(0, (elem) => {
+const pos0base = new Layer(0, (elem) => {
   let ctx = elem.getContext('2d');
   ctx.beginPath();
   ctx.arc(95, 50, 40, 0, 2 * Math.PI);
