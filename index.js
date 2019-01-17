@@ -7,7 +7,7 @@ console.log('hello');
 let stack = [[], []];
 class Layer {
   //Current fields:
-  // elem: the canvas element associated with this layer
+  //  elem: the canvas element associated with this layer
   //  pos: 0 or 1, where the canvas is located
   //  shown: boolean
   //  stackIndex: where on the stack this Layer is, -1 if not on the stack.
@@ -42,15 +42,40 @@ class Layer {
     });
   }
 
+  //Direction is a boolean that specifies if the element has been shifted right
+  //or left; false means left, true means right.
+  updateStackPosition(direction) {
+    if (direction) {
+      this.stackIndex++;
+    } else {
+      this.stackIndex--;
+    }
+  }
+
   addToStack(optionalPosition) {
+    if (this.stackIndex != -1) {
+      throw `Tried to add a Layer onto the stack, but it's already there.`
+    }
     if (typeof optionalPosition !== 'undefined') {
+      if (optionalPosition > stack.length) {
+        throw `Tried to add an element at stack[${optionalPosition}], but ${optionalPosition} is greater than the current stack length`;
+      }
       stack[this.pos].splice(optionalPosition, 0, this);
       this.stackIndex = optionalPosition
+
+      //This shifts the stackIndex of all the entries after where this element
+      //was added, to keep everything consistent.
+      for (let i = this.stackIndex + 1; i < stack.length; i++) {
+        stack[i].updateStackPosition(true);
+      }
+
     } else {
       //Array push() returns the new array length, so the index of the element
       //added is at that new length - 1.
       this.stackIndex = stack[this.pos].push(this) - 1;
     }
+
+    //Setup display of the element
     this.elem.style.display = 'block';
     this.shown = true;
     this.elem.style.zIndex = this.stackIndex;
@@ -60,10 +85,21 @@ class Layer {
     if (this.stackIndex == -1) {
       return;
     }
+
     stack[this.pos].splice(this.stackIndex, 1);
+
+    //Stops display of the element
     this.elem.style.display = 'none';
     this.shown = false;
     this.elem.style.zIndex = this.stackIndex;
+
+    //Shifts the stackIndex of all the elements after this one, to reflect
+    //their new spot after this instance is removed.
+    for (let i = this.stackIndex + 1; i < stack.length; i++) {
+      stack[i].updateStackPosition(false);
+    }
+
+    this.stackIndex = -1;
   }
 
   edit(editfn) {
@@ -77,7 +113,7 @@ class Layer {
   addHitArea(corner1, corner2, fn) {
     this.hitAreas.push([corner1, corner2, fn]);
   }
-  
+
   checkHit(x, y) {
     if (!this.shown) {
       return false;
